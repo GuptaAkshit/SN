@@ -1,0 +1,53 @@
+"""
+Social Network Analysis (UCS813) - Lab Evaluation
+Name: Giriraj Dhyani
+Roll Number: 102203875
+Experiment 1: Compute Network Statistics (Centrality & Proximity Prestige)
+"""
+
+import networkx as nx
+
+# 1. Create a suitable Social Network
+# We use a Directed Graph (DiGraph) because "Prestige" only makes sense
+# when edges have a direction (e.g., who follows whom).
+G = nx.DiGraph()
+
+# Adding edges to simulate a small social network
+edges = [
+    ('A', 'B'), ('A', 'C'), ('B', 'C'), ('C', 'A'),
+    ('D', 'C'), ('E', 'D'), ('E', 'F'), ('F', 'C')
+]
+G.add_edges_from(edges)
+
+print("--- Network Statistics (Experiment 1) ---\n")
+
+# 2. Degree Centrality
+# Measures how connected a node is. NetworkX calculates (in_degree + out_degree) / (n-1)
+degree_centrality = nx.degree_centrality(G)
+print("1. Degree Centrality:")
+for node, value in degree_centrality.items():
+    print(f"   Node {node}: {value:.3f}")
+
+# 3. Closeness Centrality
+# Measures how fast a given node can reach all other nodes (out-going paths).
+closeness_centrality = nx.closeness_centrality(G)
+print("\n2. Closeness Centrality:")
+for node, value in closeness_centrality.items():
+    print(f"   Node {node}: {value:.3f}")
+
+# 4. Betweenness Centrality
+# Measures how often a node acts as a bridge along the shortest path between two other nodes.
+betweenness_centrality = nx.betweenness_centrality(G)
+print("\n3. Betweenness Centrality:")
+for node, value in betweenness_centrality.items():
+    print(f"   Node {node}: {value:.3f}")
+
+# 5. Proximity Prestige
+# Prestige focuses on how easily OTHERS can reach YOU (in-coming paths).
+# The easiest way to calculate this in NetworkX is to reverse the graph's edges
+# and then calculate Closeness Centrality.
+G_reversed = G.reverse()
+proximity_prestige = nx.closeness_centrality(G_reversed)
+print("\n4. Proximity Prestige:")
+for node, value in proximity_prestige.items():
+    print(f"   Node {node}: {value:.3f}")
