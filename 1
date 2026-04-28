@@ -1,53 +1,295 @@
 """
-Social Network Analysis (UCS813) - Lab Evaluation
-Name: Giriraj Dhyani
-Roll Number: 102203875
 Experiment 1: Compute Network Statistics (Centrality & Proximity Prestige)
 """
 
 import networkx as nx
 
-# 1. Create a suitable Social Network
-# We use a Directed Graph (DiGraph) because "Prestige" only makes sense
-# when edges have a direction (e.g., who follows whom).
 G = nx.DiGraph()
-
-# Adding edges to simulate a small social network
 edges = [
     ('A', 'B'), ('A', 'C'), ('B', 'C'), ('C', 'A'),
     ('D', 'C'), ('E', 'D'), ('E', 'F'), ('F', 'C')
 ]
 G.add_edges_from(edges)
 
-print("--- Network Statistics (Experiment 1) ---\n")
-
 # 2. Degree Centrality
-# Measures how connected a node is. NetworkX calculates (in_degree + out_degree) / (n-1)
 degree_centrality = nx.degree_centrality(G)
 print("1. Degree Centrality:")
 for node, value in degree_centrality.items():
     print(f"   Node {node}: {value:.3f}")
 
 # 3. Closeness Centrality
-# Measures how fast a given node can reach all other nodes (out-going paths).
 closeness_centrality = nx.closeness_centrality(G)
 print("\n2. Closeness Centrality:")
 for node, value in closeness_centrality.items():
     print(f"   Node {node}: {value:.3f}")
 
 # 4. Betweenness Centrality
-# Measures how often a node acts as a bridge along the shortest path between two other nodes.
 betweenness_centrality = nx.betweenness_centrality(G)
 print("\n3. Betweenness Centrality:")
 for node, value in betweenness_centrality.items():
     print(f"   Node {node}: {value:.3f}")
 
 # 5. Proximity Prestige
-# Prestige focuses on how easily OTHERS can reach YOU (in-coming paths).
-# The easiest way to calculate this in NetworkX is to reverse the graph's edges
-# and then calculate Closeness Centrality.
 G_reversed = G.reverse()
 proximity_prestige = nx.closeness_centrality(G_reversed)
 print("\n4. Proximity Prestige:")
 for node, value in proximity_prestige.items():
     print(f"   Node {node}: {value:.3f}")
+
+
+
+
+
+22222222222222222222222222222222222222222222222222222222222222222222222222222222222
+"""
+Experiment 2: Random Walk, Hitting Time, and Commute Time
+"""
+import networkx as nx
+import random
+
+def random_walk(G, start_node, target_node, max_steps=1000):
+    curr = start_node
+    steps = 0
+    while curr != target_node and steps < max_steps:
+        neighbors = list(G.neighbors(curr))
+        if not neighbors:
+            return float('inf') # Dead end
+        curr = random.choice(neighbors)
+        steps += 1
+    return steps if curr == target_node else float('inf')
+
+def expected_time(G, start, target, simulations=1000):
+    total_steps = 0
+    successful_runs = 0
+    for _ in range(simulations):
+        steps = random_walk(G, start, target)
+        if steps != float('inf'):
+            total_steps += steps
+            successful_runs += 1
+    return total_steps / successful_runs if successful_runs > 0 else float('inf')
+
+# 1. Setup Graph
+G = nx.Graph()
+G.add_edges_from([(1, 2), (1, 3), (2, 4), (3, 4), (4, 5)])
+
+node_A, node_B = 1, 5
+
+# 2. Hitting Time (A to B)
+hit_time_AB = expected_time(G, node_A, node_B)
+print(f"Simulated Expected Hitting Time ({node_A} -> {node_B}): {hit_time_AB:.2f} steps")
+
+# 3. Commute Time (A to B to A)
+hit_time_BA = expected_time(G, node_B, node_A)
+commute_time = hit_time_AB + hit_time_BA
+print(f"Simulated Expected Commute Time ({node_A} <-> {node_B}): {commute_time:.2f} steps")
+
+
+
+
+33333333333333333333333333333333333333333333333333333333333333333333333333
+"""
+Experiment 3: Neumann Kernel Proximity Measures
+"""
+import networkx as nx
+import numpy as np
+
+# 1. Setup Graph
+G = nx.Graph()
+G.add_edges_from([(0, 1), (0, 2), (1, 2), (2, 3)])
+
+# 2. Get Adjacency Matrix
+A = nx.to_numpy_array(G)
+n = len(A)
+
+# 3. Neumann Kernel Formula: K = (I - alpha * A)^-1
+alpha = 0.1  # Decay factor
+I = np.eye(n) # Identity Matrix
+
+try:
+    # Compute inverse
+    neumann_kernel = np.linalg.inv(I - alpha * A)
+    print("Neumann Kernel Proximity Matrix:")
+    print(np.round(neumann_kernel, 3))
+except np.linalg.LinAlgError:
+    print("Matrix inversion failed. Alpha might be too large.")
+
+
+
+
+
+4444444444444444444444444444444444444444444444444444444444444444444444444444
+"""
+Experiment 4: Markov Cluster Algorithm
+"""
+import networkx as nx
+import numpy as np
+
+def normalize(matrix):
+    # Normalize columns so they sum to 1
+    col_sums = matrix.sum(axis=0)
+    return matrix / col_sums
+
+def expand(matrix):
+    # Matrix squaring
+    return np.dot(matrix, matrix)
+
+def inflate(matrix, power):
+    # Raise elements to power and normalize
+    inflated = np.power(matrix, power)
+    return normalize(inflated)
+
+# 1. Setup Graph with self-loops (required for MCL to converge)
+G = nx.Graph()
+G.add_edges_from([(0,1), (0,2), (1,2), (3,4), (3,5), (4,5), (2,3)]) # Two clusters connected by 2-3
+for node in G.nodes():
+    G.add_edge(node, node)
+
+# 2. Initialize Transition Matrix
+A = nx.to_numpy_array(G)t
+M = normalize(A)
+
+# 3. MCL Loop
+iterations = 20
+power = 2.0 # Inflation parameter
+
+for i in range(iterations):
+    M = expand(M)
+    M = inflate(M, power)
+
+print("Converged MCL Matrix:")
+print(np.round(M, 3))
+
+
+
+
+
+
+555555555555555555555555555555555555555555555555555555555555555555555555555555555
+"""
+Experiment 5: Page Rank Algorithm over Directed Graph
+"""
+import networkx as nx
+
+# 1. Setup Directed Graph
+G = nx.DiGraph()
+edges = [('Home', 'About'), ('Home', 'Products'),
+         ('About', 'Home'), ('Products', 'Cart'),
+         ('Cart', 'Home'), ('Blog', 'Home')]
+G.add_edges_from(edges)
+
+# 2. Compute PageRank
+# alpha = 0.85 is the standard damping factor (probability of clicking a link vs jumping randomly)
+pagerank_scores = nx.pagerank(G, alpha=0.85)
+
+print("Page Rank Scores:")
+# Sort by highest importance
+for page, score in sorted(pagerank_scores.items(), key=lambda x: x[1], reverse=True):
+    print(f"   {page}: {score:.4f}")
+
+
+
+
+
+
+
+66666666666666666666666666666666666666666666666666666666666666666666666666666666
+"""
+Experiment 6: Link Prediction (Graph distance, Common Neighbors, Jaccard's)
+"""
+import networkx as nx
+
+G = nx.Graph()
+G.add_edges_from([('A', 'B'), ('A', 'C'), ('B', 'D'), ('C', 'D'), ('D', 'E')])
+
+node1, node2 = 'A', 'D'
+
+print(f"Link Prediction Metrics between {node1} and {node2}:\n")
+
+# 1. Graph Distance (Shortest Path)
+try:
+    distance = nx.shortest_path_length(G, source=node1, target=node2)
+    print(f"Graph Distance: {distance}")
+except nx.NetworkXNoPath:
+    print("Graph Distance: Infinite (No path)")
+
+# 2. Common Neighbors
+common_neigh = list(nx.common_neighbors(G, node1, node2))
+print(f"Common Neighbors Count: {len(common_neigh)} {common_neigh}")
+
+# 3. Jaccard's Coefficient
+# NetworkX requires a list of node pairs to compute Jaccard
+jaccard = list(nx.jaccard_coefficient(G, [(node1, node2)]))
+print(f"Jaccard's Coefficient: {jaccard[0][2]:.4f}")
+
+
+
+
+
+
+
+
+777777777777777777777777777777777777777777777777777777777777777777777777777777777
+"""
+Experiment 7: Univariate Temporal Event Detection
+"""
+import numpy as np
+
+# Simulated temporal data (e.g., number of interactions per day)
+# Notice the spike on day 7
+time_series = [10, 12, 11, 14, 13, 10, 55, 12, 11, 14]
+
+window_size = 3
+threshold = 2.0  # Z-score threshold for an anomaly
+
+print("Event Detection Log:")
+for i in range(window_size, len(time_series)):
+    # Get recent history window
+    window = time_series[i - window_size : i]
+    current_value = time_series[i]
+
+    # Calculate Mean and Std Dev
+    mean = np.mean(window)
+    std_dev = np.std(window)
+
+    # Avoid division by zero
+    if std_dev == 0:
+        continue
+
+    # Calculate Z-score
+    z_score = (current_value - mean) / std_dev
+
+    if z_score > threshold:
+        print(f"EVENT DETECTED at time {i}! Value: {current_value}, Z-score: {z_score:.2f}")
+    else:
+        print(f"Time {i} normal. Value: {current_value}, Z-score: {z_score:.2f}")
+
+
+
+
+
+
+
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+"""
+Experiment 8: Measure Influence via Reachability
+"""
+import networkx as nx
+
+# 1. Setup Directed Graph (Information flow)
+G = nx.DiGraph()
+G.add_edges_from([('CEO', 'Manager1'), ('CEO', 'Manager2'),
+                  ('Manager1', 'Emp1'), ('Manager1', 'Emp2'),
+                  ('Manager2', 'Emp3'), ('Emp3', 'Intern')])
+
+print("Influence via Reachability (Total Descendants):")
+
+# 2. Calculate reachability for each node
+influence_scores = {}
+for node in G.nodes():
+    # nx.descendants finds all nodes reachable from the source
+    reachable_nodes = nx.descendants(G, node)
+    influence_scores[node] = len(reachable_nodes)
+
+# Sort by highest influence
+for node, reach in sorted(influence_scores.items(), key=lambda x: x[1], reverse=True):
+    print(f"   {node} can reach {reach} other node(s).")
